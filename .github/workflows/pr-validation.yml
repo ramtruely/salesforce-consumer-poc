@@ -9,6 +9,6 @@ on:
 jobs:
 
   enterprise-validation:
-    uses: ramtruely/salesforce-enterprise-poc/.github/workflows/pr-validate.yml@feature/pr-validation-poc
+    uses: ramtruely/salesforce-enterprise-poc/.github/workflows/pr-validation.yml@feature/pr-validation-poc
 
     secrets: inherit
