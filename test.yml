@@ -10,3 +10,5 @@
     else
       echo "first_pr=false" >> $GITHUB_OUTPUT
     fi
+---
+if ! echo "$line" | grep -qE '^(S-|D-|fix:|feat:|chore:|test:|refactor:|hotfix:|Revert|Merge|Replace|Potential|Initial|DevOps|Sync)'; then
