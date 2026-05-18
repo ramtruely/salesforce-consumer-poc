@@ -1,0 +1,14 @@
+name: Consumer PR Validation
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - release
+
+jobs:
+
+  enterprise-validation:
+    uses: ramtruely/salesforce-enterprise-poc/.github/workflows/pr-validation.yml@feature/pr-validation-poc
+
+    secrets: inherit
