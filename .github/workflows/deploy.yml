@@ -1,7 +1,7 @@
 name: Consumer PR Validation
 
 on:
-  pull_request:
+  push:
     branches:
       - develop
       - release
