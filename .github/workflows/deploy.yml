@@ -1,4 +1,4 @@
-name: Consumer Deployment
+name: Consumer PR Validation
 
 on:
   pull_request:
@@ -9,6 +9,10 @@ on:
 jobs:
 
   enterprise-validation:
-    uses: ramtruely/salesforce-enterprise-poc/.github/workflows/deploy.yml@feature/pr-validation-poc
+
+    uses: ramtruely/salesforce-enterprise-poc/.github/workflows/pr-validation.yml@feature/pr-validation-poc
+
+    with:
+      target_env: ${{ github.base_ref == 'develop' && 'TEST' || 'LOAD' }}
 
     secrets: inherit
