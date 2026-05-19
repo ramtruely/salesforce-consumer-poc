@@ -13,6 +13,6 @@ jobs:
     uses: ramtruely/salesforce-enterprise-poc/.github/workflows/deploy.yml@feature/pr-validation-poc
 
     with:
-      target_env: ${{ github.base_ref == 'develop' && 'TEST' || 'LOAD' }}
+      target_env: ${{ github.ref_name == 'develop' && 'TEST' || 'LOAD' }}
 
     secrets: inherit
