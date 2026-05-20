@@ -19,3 +19,6 @@ describe('c-hello-world', () => {
         expect(pTag.textContent).toBe('Hello World');
     });
 });
+
+
+force-app/main/default/lwc/helloWorld/__tests__/helloWorld.test.js
