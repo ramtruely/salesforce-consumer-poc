@@ -1,0 +1,3 @@
+"scripts": {
+  "test:unit": "sfdx-lwc-jest"
+}
