@@ -1,0 +1,58 @@
+comment-pr:
+  name: Update PR
+  runs-on: ubuntu-latest
+
+  needs:
+    - run-validation
+    - pre-requisite
+    - ChecksResolver
+
+  if: |
+    always() &&
+    needs.run-validation.result != 'skipped' &&
+    github.event.repository.name != 'dx-dashboard' &&
+    needs.pre-requisite.outputs.main_code == 'yes' &&
+    github.event.repository.name != 'dx-automation-orgDependent' &&
+    needs.ChecksResolver.outputs.gate_pr_effective_status == 'true'
+
+  steps:
+    - name: Generate token from GitHub App
+      id: generate_token
+      uses: actions/create-github-app-token@v3
+      with:
+        client-id: ${{ secrets.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+
+    - name: checkout action repo
+      uses: actions/checkout@v5
+      with:
+        repository: allegis-is/allegis-sf-action
+        ref: master
+        path: allegis-sf-action
+        token: ${{ steps.generate_token.outputs.token }}
+
+    - name: Generate error / results
+      uses: allegis-is/allegis-sf-action/sf-unittest-report@master
+      with:
+        package-name: ${{ github.event.repository.name }}
+        env-name: ${{ needs.pre-requisite.outputs.sandbox }}
+
+    - name: Print Summary
+      shell: bash
+      run: |
+        echo "======================================"
+        echo "Enterprise PR Validation Summary"
+        echo "======================================"
+
+        echo "Environment: ${{ needs.pre-requisite.outputs.target_env }}"
+        echo "First PR: ${{ needs.pre-requisite.outputs.first_pr }}"
+        echo "Validation Mode: ${{ needs.pre-requisite.outputs.validation_mode }}"
+        echo "Sandbox: ${{ needs.pre-requisite.outputs.sandbox }}"
+        echo "Main Code Changed: ${{ needs.pre-requisite.outputs.main_code }}"
+        echo "Apex Code Changed: ${{ needs.pre-requisite.outputs.apex_code }}"
+        echo "LWC Code Changed: ${{ needs.pre-requisite.outputs.lwc_code }}"
+
+        echo "======================================"
+        echo "Enterprise PR Validation Completed"
+        echo "======================================"
