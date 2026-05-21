@@ -1,0 +1,134 @@
+jobs:
+  pre-requisite:
+    name: Getting started
+    runs-on: ubuntu-latest
+    environment: RepoActionsAndSecretsEnv
+
+    steps:
+      - name: Generate token from GitHub App
+        id: generate_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # ---------------------------------------------------
+      # Export Environment Variables
+      # ---------------------------------------------------
+
+      - name: Export SKIP_PRETTIER_VALIDATION from environment
+        id: export_env_vars
+        shell: bash
+        run: |
+          echo "SKIP_PRETTIER_VALIDATION is: ${{ vars.SKIP_PRETTIER_VALIDATION }}"
+          echo "SKIP_PRETTIER_VALIDATION=${{ vars.SKIP_PRETTIER_VALIDATION }}" >> $GITHUB_OUTPUT
+
+          echo "ENABLE_SFEVOLVELOAD_DEPLOYMENT is: ${{ vars.ENABLE_SFEVOLVELOAD_DEPLOYMENT }}"
+          echo "ENABLE_SFEVOLVELOAD_DEPLOYMENT=${{ vars.ENABLE_SFEVOLVELOAD_DEPLOYMENT }}" >> $GITHUB_OUTPUT
+
+      # ---------------------------------------------------
+      # Set Variables
+      # ---------------------------------------------------
+
+      - name: set-variables
+        uses: allegis-is/allegis-sf-action/pre-requisite-pr@master
+        with:
+          gh_token: ${{ steps.generate_token.outputs.token }}
+          github_repo: ${{ github.repository }}
+          pr_number: ${{ github.event.pull_request.number }}
+
+        env:
+          ENABLE_SFEVOLVELOAD_DEPLOYMENT: ${{ steps.export_env_vars.outputs.ENABLE_SFEVOLVELOAD_DEPLOYMENT }}
+
+      # ---------------------------------------------------
+      # Detect Environment
+      # ---------------------------------------------------
+
+      - name: Detect Environment
+        id: env-detect
+        shell: bash
+        run: |
+          if [ "${{ github.base_ref }}" == "develop" ]; then
+            echo "env=TEST" >> $GITHUB_OUTPUT
+          else
+            echo "env=LOAD" >> $GITHUB_OUTPUT
+          fi
+
+      # ---------------------------------------------------
+      # Detect First PR
+      # ---------------------------------------------------
+
+      - name: Detect First PR
+        id: pr-detect
+        shell: bash
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          echo "Current PR Number: $PR_NUMBER"
+
+          if [ "$PR_NUMBER" -eq 1 ]; then
+            echo "first_pr=true" >> $GITHUB_OUTPUT
+          else
+            echo "first_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ---------------------------------------------------
+      # Detect Deployment Cache
+      # ---------------------------------------------------
+
+      - name: Check Deployment Cache
+        id: cache-check
+        uses: actions/cache@v4
+        with:
+          path: .deploy_marker_${{ steps.env-detect.outputs.env }}
+          key: deploy-marker-${{ steps.env-detect.outputs.env }}-v1
+
+      # ---------------------------------------------------
+      # Set Validation Mode
+      # ---------------------------------------------------
+
+      - name: Set Validation Mode
+        id: validation-mode
+        shell: bash
+        run: |
+          if [ "${{ steps.pr-detect.outputs.first_pr }}" == "true" ] || \
+             [ "${{ steps.cache-check.outputs.cache-hit }}" != "true" ]; then
+
+            echo "mode=bootstrap" >> $GITHUB_OUTPUT
+
+          else
+
+            echo "mode=full" >> $GITHUB_OUTPUT
+
+          fi
+
+      # ---------------------------------------------------
+      # Debug Context
+      # ---------------------------------------------------
+
+      - name: Debug Context
+        shell: bash
+        run: |
+          echo "Environment: ${{ steps.env-detect.outputs.env }}"
+          echo "First PR: ${{ steps.pr-detect.outputs.first_pr }}"
+          echo "Cache Hit: ${{ steps.cache-check.outputs.cache-hit }}"
+          echo "Validation Mode: ${{ steps.validation-mode.outputs.mode }}"
+
+    outputs:
+      is_org_dep: ${{ env.IS_ORG_DEP }}
+      sandbox: ${{ env.SANDBOX }}
+      runner: ${{ env.runner }}
+      main_code: ${{ env.main_code }}
+      apex_code: ${{ env.classes_changed }}
+      lwc_code: ${{ env.lwc_code }}
+      is_merge_pr: ${{ env.is_merge_pr }}
+
+      SKIP_PRETTIER_VALIDATION: ${{ steps.export_env_vars.outputs.SKIP_PRETTIER_VALIDATION }}
+
+      validation_mode: ${{ steps.validation-mode.outputs.mode }}
+      target_env: ${{ steps.env-detect.outputs.env }}
+      first_pr: ${{ steps.pr-detect.outputs.first_pr }}
